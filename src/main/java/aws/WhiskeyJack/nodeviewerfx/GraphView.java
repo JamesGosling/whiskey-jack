@@ -9,6 +9,7 @@ import aws.WhiskeyJack.code.*;
 import aws.WhiskeyJack.infer.*;
 import aws.WhiskeyJack.metadata.*;
 import aws.WhiskeyJack.nodegraph.*;
+import aws.WhiskeyJack.properties.*;
 import aws.WhiskeyJack.util.*;
 import static aws.WhiskeyJack.util.EZOutput.*;
 import static aws.WhiskeyJack.util.Utils.*;
@@ -676,19 +677,22 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
         var domain = s == null ? Domain.any : s.getDomain();
         D."Populate propbox domain \{domain}";
         if(s instanceof aws.WhiskeyJack.nodegraph.Node node) {
-            node.forAllProperties((k, v) ->
-                addProp(Coerce.toString(k), "string", v, nv ->
-                    node.putProp(k, nv)));
-            node.metadata.forAllProperties((k, v) -> {
-                if(!"properties".equals(k))
-                    addProp(Coerce.toString(k), "string", v, nv ->
-                        node.putProp(k, nv));
+            node.forAllProperties(p -> {
+                if(!p.getMeta(MetaProperty.unEditable, false))
+                    addProp(p.getName(), "string", p.get(), nv -> p.set(nv), p.getMeta("readonly", false));
             });
-            if(node.metadata.getProp("properties", null) instanceof Map m)
+            node.nodeMetadata.forAllProperties(p -> {
+                if(node.getProp0(p.getName(), null) == null
+                   && !p.getMeta(MetaProperty.unEditable, false))
+                    addProp(p.getName(), "string", p.get(""), nv ->
+                        node.putProp(p.getName(), nv), p.getMeta("readonly", false));
+            });
+            if(node.nodeMetadata.getProp("properties", null) instanceof Map m)
                 m.forEach((k, v) -> {
-                    D."\{k} is a \{v.getClass()}";
-                    addProp(Coerce.toString(k), "string", v, nv ->
-                        node.putProp(k, nv));
+                    var sk = Coerce.toString(k);
+                    D."\{sk} is a \{v.getClass()}";
+                    addProp(sk, "string", v, nv ->
+                        node.putProp(sk, nv), false);
                 });
         } else for(var q: Question.extract(q -> q.getDomain() == domain)) {
                 var label = q.get("label", null);
@@ -697,19 +701,20 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
                         if(isEmpty(label = q.get("description", null)))
                             label = "No Name";
                 var type = q.get("type", (Object) null);
-                addProp(label, type, q.getValue(), v -> q.setValue(v));
+                addProp(label, type, q.getValue(), v -> q.setValue(v), false);
             }
         propbox.setMaxWidth(Double.MAX_VALUE);
         var c1 = new ColumnConstraints();
-        c1.setPercentWidth(60);
+//        c1.setPercentWidth(40);
+        c1.setHgrow(Priority.NEVER);
         var c2 = new ColumnConstraints();
-        c2.setPercentWidth(40);
+//        c2.setPercentWidth(60);
         c2.setHgrow(Priority.ALWAYS);
         propbox.getColumnConstraints().setAll(c1, c2);
         propbox.getChildren().setAll(props);
         props = null;
     }
-    private void addProp(String s, Object type, Object value, Consumer<Object> setter) {
+    private void addProp(String s, Object type, Object value, Consumer<Object> setter, boolean readonly) {
         Region valueNode;
         var labelNode = new Label(s);
         var tooltip = "";
@@ -739,7 +744,9 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
                 setter.accept(is.toString());
             });
             valueNode = b;
-        } else switch(type.toString()) {
+        } else if(readonly)
+            valueNode = new Label(Coerce.toString(value));
+        else switch(type.toString()) {
             case "boolean" -> {
                 var b = new CheckBox();
                 b.setSelected(Coerce.toBoolean(value));
@@ -777,7 +784,7 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
         }
 //        labelNode.setMaxWidth(Double.MAX_VALUE);
         valueNode.setMaxWidth(Double.MAX_VALUE);
-        GridPane.setConstraints(labelNode, 0, row, 1, 1, HPos.LEFT, VPos.BASELINE, Priority.ALWAYS, Priority.NEVER);
+        GridPane.setConstraints(labelNode, 0, row, 1, 1, HPos.LEFT, VPos.BASELINE, Priority.NEVER, Priority.NEVER);
         GridPane.setConstraints(valueNode, 1, row, 1, 1, HPos.CENTER, VPos.BASELINE, Priority.ALWAYS, Priority.NEVER);
         row++;
         props.add(labelNode);

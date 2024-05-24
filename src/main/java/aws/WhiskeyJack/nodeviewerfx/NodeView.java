@@ -8,6 +8,7 @@ import aws.WhiskeyJack.metadata.*;
 import aws.WhiskeyJack.nodegraph.Node;
 import aws.WhiskeyJack.nodegraph.*;
 import aws.WhiskeyJack.util.*;
+import static aws.WhiskeyJack.util.EZOutput.*;
 import java.util.*;
 import java.util.function.*;
 import javafx.geometry.*;
@@ -19,7 +20,7 @@ import javax.annotation.*;
 
 public class NodeView extends Node implements Selectable {
     public NodeView(@Nonnull GraphView parent, @Nonnull Node original) {
-        super(parent, original.metadata);
+        super(parent, original.nodeMetadata);
         init();
         populateFrom(original);
     }
@@ -83,7 +84,7 @@ public class NodeView extends Node implements Selectable {
         titleIcon.setOnMouseReleased(e -> setExpanded(!isExpanded()));
         establishIcon();
         setTitle(getStringProp("label", getName()));
-        setTooltip(metadata.getDescription());
+        setTooltip(nodeMetadata.getDescription());
         installPorts();
         setExpanded(true);
         establishDomain(null, getDomain());
@@ -149,6 +150,7 @@ public class NodeView extends Node implements Selectable {
     public final void setExpanded(boolean b) {
         if(b != expanded) {
             expanded = b;
+            putProp("expanded", b);
 //            openClose.getStyleClass().setAll(expanded ? "fgopen" : "fgclosed");
             pane.getChildren().remove(contents);
             if(expanded)
@@ -189,6 +191,7 @@ public class NodeView extends Node implements Selectable {
     @Override
     public NodeView setDomain(Domain d) {
         var d0 = getDomain();
+       if("streamManager".equals(getName())) D."NV setDomain -> was \{d0} prop=\{d}";
         super.setDomain(d);
         var d1 = getDomain();
         if(d0 != d1)
@@ -197,7 +200,7 @@ public class NodeView extends Node implements Selectable {
     }
     @Override
     public Domain getMetaDomain() {
-        return metadata.getDomain();
+        return nodeMetadata.getDomain();
     }
     private void establishDomain(Domain d0, Domain d1) {
 //        System.out.println("estDom " + this.getName() + " " + d0 + "->" + d1);

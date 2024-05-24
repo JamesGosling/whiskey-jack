@@ -4,6 +4,7 @@
  */
 package aws.WhiskeyJack.nodegraph;
 
+import aws.WhiskeyJack.properties.*;
 import java.util.*;
 
 public class Arc extends GraphPart<Arc> {

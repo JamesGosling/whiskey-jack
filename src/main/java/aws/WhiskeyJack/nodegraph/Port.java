@@ -5,6 +5,8 @@
 package aws.WhiskeyJack.nodegraph;
 
 import aws.WhiskeyJack.nodegraph.Graph.PendingConnection;
+import aws.WhiskeyJack.properties.*;
+import static aws.WhiskeyJack.properties.MetaProperty.*;
 import static aws.WhiskeyJack.util.Collectable.*;
 import aws.WhiskeyJack.util.*;
 import java.util.*;
@@ -30,17 +32,22 @@ public class Port extends Collectable {
         other.forEachArc(a -> System.out.println("  mk arc " + a));
     }
     public void populateFrom(Map values) {
-        value = getOpt(values,"value",value);
-        var d = getOpt(values,"domain",(String) null);
-        if(d!=null)
+        value = getOpt(values, "value", value);
+        var d = getOpt(values, "domain", (String) null);
+        if(d != null)
             setDomain(Domain.of(d));
-        getCollection(values, "arcs").forEach(s->{
-            if(s instanceof Map arc) {
+        getCollection(values, "arcs").forEach(s -> {
+            if(s instanceof Map arc)
                 getContext().addConnection(new PendingConnection(this,
-                        (String) arc.get("toUid"),
-                        (String) arc.get("toPort")));
-            }
+                    (String) arc.get("toUid"),
+                    (String) arc.get("toPort")));
         });
+        within.putProp(getName(), new Property(new MetaProperty(
+            mutableMapOf("name", getName(),
+                "type", metadata.getType(),
+                "description", metadata.getDescription(),
+                "readonly", true
+            )), this));
     }
     public void remove(Arc a) {
         if(arcs != null) {
@@ -54,7 +61,9 @@ public class Port extends Collectable {
             arcs = new ArrayList<>();
         arcs.add(a);
     }
-    public Iterable<Arc> allArcs() { return arcs==null ? Collections.emptyList() : arcs; }
+    public Iterable<Arc> allArcs() {
+        return arcs == null ? Collections.emptyList() : arcs;
+    }
     public void forEachArc(Consumer<? super Arc> f) {
         if(arcs != null)
             arcs.forEach(f);
@@ -63,7 +72,7 @@ public class Port extends Collectable {
         return arcs == null ? 0 : arcs.size();
     }
     public Arc getArc(int i) {
-        return arcs==null || i<0 || i>=arcs.size() ? null : arcs.get(i);
+        return arcs == null || i < 0 || i >= arcs.size() ? null : arcs.get(i);
     }
     public boolean connectsTo(Port x) {
         if(arcs != null)
@@ -74,26 +83,26 @@ public class Port extends Collectable {
     }
     public boolean compatibleWith(Port b) {
         return getDomain().compatibleWith(b.getDomain())
-                && getType().compatibleWith(b.getType());
+               && getType().compatibleWith(b.getType());
     }
     public void connectTo(Port n) {
         Arc.connect(this, n);
     }
     @Override
-    protected void collectMore(Map<String,Object> map) {
-        if(arcs!=null) {
+    protected void collectMore(Map<String, Object> map) {
+        if(arcs != null) {
             List<Map> arcList = new ArrayList<>(1);
-            for(var thisArc:arcs)
-                if(thisArc.oneEnd()==this) {
+            for(var thisArc: arcs)
+                if(thisArc.oneEnd() == this) {
                     var nmap = new HashMap();
                     var otherEnd = thisArc.otherEnd();
-                    putOpt(nmap,"toUid",otherEnd.within.getUid());
-                    putOpt(nmap,"toPort",otherEnd.getName());
+                    putOpt(nmap, "toUid", otherEnd.within.getUid());
+                    putOpt(nmap, "toPort", otherEnd.getName());
                     arcList.add(nmap);
                 }
             putOpt(map, "arcs", arcList);
         }
-        if(value!=metadata.getValue())
+        if(value != metadata.getValue())
             putOpt(map, "value", value);
         if(domain != Domain.unknown) putOpt(map, "domain", domain);
     }
@@ -105,8 +114,8 @@ public class Port extends Collectable {
     }
     public StringBuilder appendFullNameTo(StringBuilder sb) {
         return within.appendNameTo(sb)
-               .append('.')
-               .append(getName());
+            .append('.')
+            .append(getName());
     }
     public String getName() {
         return metadata.getName();
@@ -128,9 +137,11 @@ public class Port extends Collectable {
     public Domain getDomain() {
         return domain == Domain.unknown ? within.getDomain() : domain;
     }
-    public boolean isCode() { return metadata.isCode(); }
+    public boolean isCode() {
+        return metadata.isCode();
+    }
     public Port setDomain(Domain d) {
-        if(d==within.getDomain() || d==Domain.any) d = Domain.unknown;
+        if(d == within.getDomain() || d == Domain.any) d = Domain.unknown;
         domain = d;
         return this;
     }
@@ -148,7 +159,7 @@ public class Port extends Collectable {
         return "Port<" + within.getName() + "." + getName() + ">";
     }
     public String dtString() {
-        return getName()+'['+getDomain()+','+getType().getName()+']';
+        return getName() + '[' + getDomain() + ',' + getType().getName() + ']';
     }
     public final void setParsedValue(String v) {
         setValue(Utils.parseObject(v));
@@ -156,19 +167,25 @@ public class Port extends Collectable {
     public void setValue(Object v) {
         value = v;
         var original = within.copiedFrom;
-        if(original!=null)
+        if(original != null)
             original.getPort(getName()).setValue(v);
     }
-    public Object getValue() { return value; }
+    public Object getValue() {
+        return value;
+    }
     private String message;
-    public final String getMessage() { return message; }
+    public final String getMessage() {
+        return message;
+    }
     public Port setMessage(ErrorCode ec, String m) {
-        errorCode = ec==null ? ErrorCode.allIsWell : ec;
+        errorCode = ec == null ? ErrorCode.allIsWell : ec;
         message = m;
         return this;
-}
+    }
     public final Port setMessage(String m) {
         return setMessage(ErrorCode.allIsWell, m);
     }
-    public ErrorCode getErrorCode() { return errorCode; }
+    public ErrorCode getErrorCode() {
+        return errorCode;
+    }
 }

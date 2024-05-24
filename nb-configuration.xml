@@ -74,5 +74,10 @@ Any value defined here will override the pom.xml file value but is only applicab
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.text-limit-width>80</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.text-limit-width>
         <org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.expand-tabs>true</org-netbeans-modules-editor-indent.text.x-java.CodeStyle.project.expand-tabs>
         <org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_perf_2e_ManualArrayCopy.enabled>false</org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_perf_2e_ManualArrayCopy.enabled>
+        <netbeans.hint.jdkPlatform>JDK_22</netbeans.hint.jdkPlatform>
+        <org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_SuspiciousNamesCombination.groups>x, width|y, height</org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_SuspiciousNamesCombination.groups>
+        <org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_bugs_2e_CloneAndCloneable_2e_cloneableWithoutClone.enabled>true</org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_bugs_2e_CloneAndCloneable_2e_cloneableWithoutClone.enabled>
+        <org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_bugs_2e_CollectionRemove.warn-for-castable>true</org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_bugs_2e_CollectionRemove.warn-for-castable>
+        <org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_bugs_2e_ThrowableNotThrown_2e_newThrowable.enabled>true</org-netbeans-spi-editor-hints-projects.text.x-java.org_2e_netbeans_2e_modules_2e_java_2e_hints_2e_bugs_2e_ThrowableNotThrown_2e_newThrowable.enabled>
     </properties>
 </project-shared-configuration>

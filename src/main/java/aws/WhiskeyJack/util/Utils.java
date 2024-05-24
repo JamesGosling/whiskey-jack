@@ -589,28 +589,6 @@ public final class Utils {
     }
 
     /**
-     * Make an immutable map from provided keys and values.
-     *
-     * @param k1 first key
-     * @param v1 first value
-     * @param keyValuePairs remaining keys and values
-     * @param <K> Map key type
-     * @param <V> Map value type
-     * @return immutable map with the provided key-values
-     * @throws IllegalArgumentException if the key-value pairs are not evenly
-     * matched
-     */
-    public static <K, V> Map<K, V> immutableMap(K k1, V v1, Object... keyValuePairs) {
-        if(keyValuePairs.length % 2 != 0)
-            throw new IllegalArgumentException("Expected even number of arguments");
-        var map = new HashMap<K, V>();
-        map.put(k1, v1);
-        for(var i = 0; i < keyValuePairs.length; i += 2)
-            map.put((K) keyValuePairs[i], (V) keyValuePairs[i + 1]);
-        return Collections.unmodifiableMap(map);
-    }
-
-    /**
      * Clean up a file or a directory recursively.
      *
      * @param filePath path to the file

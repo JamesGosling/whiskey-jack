@@ -124,7 +124,7 @@ public class Graph<N extends Node, P extends Port, A extends Arc, G extends Grap
         return ret;
     }
     public N newNode(Node prev) {
-        var n = newNode(prev.metadata);
+        var n = newNode(prev.nodeMetadata);
         n.setUid(prev.getUid());
         n.populateFrom(prev);
         return n;

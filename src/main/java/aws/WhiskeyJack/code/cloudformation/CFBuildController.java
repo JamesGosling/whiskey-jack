@@ -42,7 +42,7 @@ public class CFBuildController implements DomainGenerationController,
             var props = n.getMapProp("Properties", null);
             if(props == null) props = Map.of("error",
                         "Properties missing from catalog entry "
-                        + n.metadata.getPath());
+                        + n.nodeMetadata.getPath());
             resource.put("Properties", dup(n, props));
         });
     }

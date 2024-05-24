@@ -11,8 +11,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jdk>21</jdk>
-        <maven.compiler.source>${jdk}</maven.compiler.source>
-        <maven.compiler.target>${jdk}</maven.compiler.target>
         <appMainClass>aws.WhiskeyJack.nodeviewerfx.Main</appMainClass>
         <appModule>aws.WhiskeyJack</appModule>
     </properties>
@@ -217,7 +215,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <release>${jdk}</release>
+                    <release>22</release>
                     <showDeprecation>true</showDeprecation>
                     <enableAssertions>true</enableAssertions>
                     <archive>

@@ -4,8 +4,10 @@
  */
 package aws.WhiskeyJack.util;
 
+import aws.WhiskeyJack.properties.*;
 import aws.WhiskeyJack.nodeviewerfx.*;
 import static aws.WhiskeyJack.util.Collectable.*;
+import static aws.WhiskeyJack.util.EZOutput.*;
 import static aws.WhiskeyJack.util.Utils.*;
 import java.lang.reflect.*;
 import java.util.*;
@@ -19,21 +21,25 @@ public abstract class Collectable {
     /* I should probably be using Jackson's built-in autoserializer, but I
      * like the control I get by hand-rolling */
     public Object collect() {
-        var ret = new HashMap<String,Object>();
+        var ret = new HashMap<String, Object>();
         collectMore(ret);
-        if(properties!=null && !properties.isEmpty()) {
-            Map<String,Object> side = new HashMap<>();
-            properties.forEach((k,v)->{
-                var vo = asObject(v);
-                if(!Utils.isEmpty(vo))
-                    side.put(String.valueOf(k), vo);
+        if(!properties.isEmpty()) {
+            Map<String, Object> props = new HashMap<>();
+            properties.values().forEach(p -> {
+                if(!p.isImmediatelyEmpty()) {
+                    var vo = asObject(p.immediateGet());
+                    if(!Utils.isEmpty(vo))
+                        props.put(p.getName(), vo);
+                }
             });
-            if(!side.isEmpty())
-                putOpt(ret,"sidecars",side);
+            if(!props.isEmpty())
+                putOpt(ret, "properties", props);
+
         }
         return ret;
     }
-    protected void collectMore(Map<String,Object> map) {}
+    protected void collectMore(Map<String, Object> map) {
+    }
     public static Object asObject(Object c) {
         return switch(c) {
             case null ->
@@ -83,8 +89,8 @@ public abstract class Collectable {
             return dflt;
         var s = map.get(key);
         return s == null ? dflt
-                : (T) (dflt instanceof String || !(s instanceof String ss) ? s
-                        : parseObject(ss));
+            : (T) (dflt instanceof String || !(s instanceof String ss) ? s
+                : parseObject(ss));
     }
     public static String get(Map m, String k, String dflt) {
         var v = m.get(k);
@@ -113,8 +119,11 @@ public abstract class Collectable {
         return Map.of();
     }
     public abstract void appendRefTo(StringBuilder sb);
-    /**  get string that can be parsed as an object reference
-     * @return reference string  */
+    /**
+     * get string that can be parsed as an object reference
+     *
+     * @return reference string
+     */
     public final String getRef() {
         var sb = new StringBuilder();
         appendRefTo(sb);
@@ -161,10 +170,15 @@ public abstract class Collectable {
             }
         }
     }
-    private final Map<Object,Object> properties = new HashMap<>();
-    
+    protected final Map<String, Property> properties = new HashMap<>();
+
+    public final Property getProperty(String s) {
+        return properties.get(s);
+    }
     public final Object getProp0(String s, Object dflt) {
-        return properties.getOrDefault(s, dflt);
+        var p = properties.get(s);
+        if("domain".equals(s)) D."getProp0: \{p}";
+        return p == null || p.isEmpty() ? dflt : p.get();
     }
     public Object getProp(String s, Object dflt) {
         return getProp0(s, dflt);
@@ -183,62 +197,25 @@ public abstract class Collectable {
     }
     public Map getMapProp(String s, String sakey) {
         var m = getProp(s, null);
-        return m instanceof Map map        ? map
-                : m == null || sakey==null ? Collections.emptyMap()
-                :                            Map.of(sakey, m);
+        return m instanceof Map map ? map
+            : m == null || sakey == null ? Collections.emptyMap()
+                : Map.of(sakey, m);
     }
-    public void putProp(Object k, Object v) {
-        if(!isEmpty(v)) properties.put(k, v);
+    public void putProp(String k, Object v) {
+        if(!isEmpty(v))
+            properties.computeIfAbsent(k, K ->
+                new Property(MetaPropertyProvider.dflt.getMetaProperty(K), null))
+                .set(v);
     }
     public void putProps(Map m) {
-        if(m!=null)
-            m.forEach((k,v)->putProp(k,v));
+        if(m != null)
+            m.forEach((k, v) -> putProp(Coerce.toString(k), v));
     }
-    public void putMissingProps(Map m) {
-        if(m!=null)
-            properties.forEach((k,v)->{
-                if(!m.containsKey(k))
-                    m.put(k, v);
-            });
+    public void putMissingProps(Map<String, Object> m) {
+        if(m != null)
+            m.forEach((k, v) -> putProp(k, v));
     }
-    public void forAllProperties(BiConsumer<? super Object,? super Object> func) {
-        properties.forEach(func);
-    }
-    public <T> T sidecar(Class<T> cl) {
-        return (T)properties.computeIfAbsent(cl, kcl->{
-            try {
-                var tcl = this.getClass();
-                var allCons = cl.getConstructors();
-                var best = (Constructor) null;
-                var bscore = 99;
-                for(var cons:allCons) {
-                    var params = cons.getParameterTypes();
-                    System.out.println("sidecar "+cl+" "+cons);
-                    var score = switch(params.length) {
-                        default->200;
-                        case 0-> 10;
-                        case 1-> params[0].isAssignableFrom(tcl) ? 5 : 99;
-                    };
-                    if(score<bscore) {
-                        best = cons;
-                        bscore = score;
-                    }
-                }
-                if(best==null) throw new IllegalAccessException("Can't find constructor for "+cl+"("+this.getClass()+")");
-                return (T)(bscore == 10 ? best.newInstance() : best.newInstance(this));
-            } catch(ReflectiveOperationException | RuntimeException  ex) {
-                throw new Error("Trying to create "+cl.getSimpleName(), ex);
-            }
-        });
-    }
-    public void removeSidecar(Class cl) {
-        properties.remove(cl);
-    }
-    public void removeAllSidecars() {
-        for(var i = properties.entrySet().iterator(); i.hasNext(); ) {
-            var ent = i.next();
-            if(ent.getKey() instanceof Class)
-                i.remove();
-        }
+    public void forAllProperties(Consumer<Property> func) {
+        properties.values().forEach(func);
     }
 }

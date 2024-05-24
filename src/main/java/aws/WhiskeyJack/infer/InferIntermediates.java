@@ -87,7 +87,7 @@ public class InferIntermediates {
                     var serviceNode = (MetaNode) servicePort.within;
                     var n = (Node) null;
                     for(Node search: (Iterable<Node>) g.forEachNode())
-                        if(search.metadata == serviceNode) {
+                        if(search.nodeMetadata == serviceNode) {
                             n = search;
                             break;
                         }

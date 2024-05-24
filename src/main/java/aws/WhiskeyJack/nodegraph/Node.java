@@ -4,6 +4,7 @@
  */
 package aws.WhiskeyJack.nodegraph;
 
+import static aws.WhiskeyJack.util.EZOutput.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
@@ -13,7 +14,7 @@ public class Node<T extends Node> extends GraphPart<T> {
     private String uid;
     protected Domain domain = Domain.unknown;
     private final Graph context;
-    public final MetaNode metadata;
+    public final MetaNode nodeMetadata;
     public Node<T> copiedFrom;
     private boolean inferred;
     public final Map<String, Port> ports = new LinkedHashMap<>();
@@ -25,7 +26,7 @@ public class Node<T extends Node> extends GraphPart<T> {
             setName("NoName");
         } else
             setName(mn.getName());
-        metadata = mn;
+        nodeMetadata = mn;
         parent.add(this);
         mn.ports.entrySet().forEach(e -> {
             var p = context.newPort(this, e.getValue().metadata);
@@ -40,7 +41,7 @@ public class Node<T extends Node> extends GraphPart<T> {
     }
     @Override
     public String getDescription() {
-        return metadata.getDescription();
+        return nodeMetadata.getDescription();
     }
     public void setUid(String u) {
         if(!Objects.equals(u,uid)) {
@@ -70,14 +71,15 @@ public class Node<T extends Node> extends GraphPart<T> {
         }
     }
     public Domain getDomain() {
-        return domain == Domain.unknown ? metadata.getDomain() : domain;
+        return domain == Domain.unknown ? nodeMetadata.getDomain() : domain;
     }
     public Domain getDomain0() {
         return domain;
     }
     public T setDomain(Domain d) {
-//        System.out.println("Set domain " + getName() + "->" + d);
-        domain = d == null || d == Domain.any || d == metadata.getDomain() ? Domain.unknown : d;
+//        if("streamManager".equals(getName())) D."Set domain -> \{d}\n\t\{new Throwable()}";
+        domain = d == null || d == Domain.any || d == nodeMetadata.getDomain() ? Domain.unknown : d;
+        putProp("domain", d);
         return (T) this;
     }
 
@@ -142,18 +144,18 @@ public class Node<T extends Node> extends GraphPart<T> {
         super.collectMore(map);
         putOpt(map, "ports", ports);
         putOpt(map, "uid", getUid());
-        putOpt(map, "meta", metadata.getUid());
-        putOpt(map, "metapath", metadata.getPath());
+        putOpt(map, "meta", nodeMetadata.getUid());
+        putOpt(map, "metapath", nodeMetadata.getPath());
         putOpt(map, "inferred", inferred);
         var d = getDomain();
-        if(d!=metadata.getDomain()) putOpt(map, "domain", d);
+        if(d!=nodeMetadata.getDomain()) putOpt(map, "domain", d);
     }
     public Port defaultPort(boolean in) {
-        var dp = metadata.defaultPort(in);
+        var dp = nodeMetadata.defaultPort(in);
         return dp == null ? null : getPort(dp.getName());
     }
     public void populateFrom(Node other) {
-        assert metadata == other.metadata;
+        assert nodeMetadata == other.nodeMetadata;
         assert ports.size() == other.ports.size();
         assert !hasUid();
         setUid(other.getUid());
@@ -167,15 +169,22 @@ public class Node<T extends Node> extends GraphPart<T> {
     }
     @Override
     public Object getProp(String s, Object dflt) {
-        var ret = super.getProp(s, dflt);
-        return ret == dflt ? metadata.getProp(s, dflt) : ret;
+        var ret = getProp0(s, null);
+        if("domain".equals(s)) D."getPropDomain0 = \{ret}";
+        return ret == null ? nodeMetadata.getProp(s, dflt) : ret;
     }
     @Override
     public void populateFrom(Map map) {
         super.populateFrom(map);
         setUid(get(map, "uid", null));
         setInferred(getBooleanProp("inferred", false));
-        setDomain(Domain.of(getStringProp("domain", getDomain().toString())));
+        var sd=getStringProp("domain", getDomain().toString());
+        var nd = Domain.of(sd);
+        if("streamManager".equals(getName())) D."populateFrom -> was \{
+            getDomain().toString() }  to \{sd}/\{nd}  prop \{
+            getStringProp("domain","missing")}/\{getStringProp("domain", getDomain().toString())}\n\t\{map}";
+        setDomain(nd);
+//        setDomain(Domain.of(getStringProp("domain", getDomain().toString())));
         populatePorts(map, "ports", false, false);
         populatePorts(map, "in", true, true); // these two lines are compatibility with an old format
         populatePorts(map, "out", false, true);

@@ -62,16 +62,19 @@ public class EZOutput implements StringTemplate.Processor<Void, RuntimeException
                         out.append(err.toString());
                         int limit = 10;
                         for(var ln: err.getStackTrace()) {
-                            out.append("\n\t")
-                                .append(ln.getMethodName())
-                                .append('@')
-                                .append(ln.getFileName())
-                                .append(':');
-                            Utils.appendLong(ln.getLineNumber(), out);
+//                            out.append("\n\tat ")
+//                                .append(ln.getMethodName())
+//                                .append('(')
+//                                .append(ln.getFileName())
+//                                .append(':');
+//                            Utils.appendLong(ln.getLineNumber(), out);
+//                            out.append(')');
+                            out.append("\n\tat "+ln);
                             if(--limit <= 0) break;
                         }
+//                        err.printStackTrace();
                     } else
-                        Utils.deepToString(val, out, 200);
+                        Utils.deepToString(val, out, 500);
                 }
             }
             out.append('\n');

@@ -2,7 +2,7 @@
  * SPDX-FileCopyrightText:  Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-package aws.WhiskeyJack.nodegraph;
+package aws.WhiskeyJack.properties;
 
 import aws.WhiskeyJack.util.*;
 import static aws.WhiskeyJack.util.Utils.*;
@@ -28,12 +28,12 @@ public abstract class PropertyBase implements Comparable<PropertyBase> {
         return immediateGet();
     }
     public abstract String getName();
-    protected final boolean isImmediatelyEmpty() {
+    public final boolean isImmediatelyEmpty() {
         var v = value;
         if(v instanceof PropertyBase p) v = p.value;
         return v == EMPTY;
     }
-    protected final Object immediateGet() {
+    public final Object immediateGet() {
         var v = value;
         if(isImmediatelyEmpty())
             throw new NoSuchElementException("No value present");
