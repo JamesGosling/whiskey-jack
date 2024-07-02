@@ -4,13 +4,14 @@
  */
 package aws.WhiskeyJack.nodegraph;
 
+import aws.WhiskeyJack.properties.*;
 import static aws.WhiskeyJack.util.EZOutput.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import javax.annotation.*;
 
-public class Node<T extends Node> extends GraphPart<T> {
+public class Node<T extends Node> extends GraphPart<T, Property> {
     private String uid;
     protected Domain domain = Domain.unknown;
     private final Graph context;

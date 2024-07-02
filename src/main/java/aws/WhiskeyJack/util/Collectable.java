@@ -17,7 +17,7 @@ import java.util.stream.*;
 /**
  * Create an object that can be easily be serialized as JSON or YAML
  */
-public abstract class Collectable {
+public abstract class Collectable <T extends PropertyBase> {
     /* I should probably be using Jackson's built-in autoserializer, but I
      * like the control I get by hand-rolling */
     public Object collect() {
@@ -170,9 +170,9 @@ public abstract class Collectable {
             }
         }
     }
-    protected final Map<String, Property> properties = new HashMap<>();
+    protected final Map<String, T> properties = new HashMap<>();
 
-    public final Property getProperty(String s) {
+    public final T getProperty(String s) {
         return properties.get(s);
     }
     public final Object getProp0(String s, Object dflt) {
@@ -203,9 +203,11 @@ public abstract class Collectable {
     }
     public void putProp(String k, Object v) {
         if(!isEmpty(v))
-            properties.computeIfAbsent(k, K ->
-                new Property(MetaPropertyProvider.dflt.getMetaProperty(K), null))
-                .set(v);
+            if(v instanceof PropertyBase pb)
+                properties.put(k, (T) pb);
+            else properties.computeIfAbsent(k, K ->
+                (T) new Property(MetaPropertyProvider.dflt.getMetaProperty(K), null))
+                .setValue(v);
     }
     public void putProps(Map m) {
         if(m != null)
@@ -215,7 +217,7 @@ public abstract class Collectable {
         if(m != null)
             m.forEach((k, v) -> putProp(k, v));
     }
-    public void forAllProperties(Consumer<Property> func) {
+    public void forAllProperties(Consumer<T> func) {
         properties.values().forEach(func);
     }
 }

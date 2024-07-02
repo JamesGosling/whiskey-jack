@@ -7,7 +7,7 @@ package aws.WhiskeyJack.nodegraph;
 import aws.WhiskeyJack.properties.*;
 import java.util.*;
 
-public class Arc extends GraphPart<Arc> {
+public class Arc extends GraphPart<Arc, Property> {
     private final Port a;
     private final Port b;
     private String tag;

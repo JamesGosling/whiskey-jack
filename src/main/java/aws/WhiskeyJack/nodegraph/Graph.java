@@ -4,6 +4,7 @@
  */
 package aws.WhiskeyJack.nodegraph;
 
+import aws.WhiskeyJack.properties.*;
 import java.io.*;
 import java.lang.reflect.*;
 import java.nio.file.*;
@@ -11,7 +12,7 @@ import java.util.*;
 import java.util.function.*;
 
 public class Graph<N extends Node, P extends Port, A extends Arc, G extends Graph>
-        extends GraphPart<Graph<N, P, A, G>>/*sic*//*sic*//*sic*//*sic*/ {
+        extends GraphPart<Graph<N, P, A, G>, Property>/*sic*//*sic*//*sic*//*sic*/ {
     public static final String graphFileExtension = "ade"; // Architecture Diagram Editor
     protected final Map<String, N> nByUid = new HashMap<>();
     private final Class<N> nodeClass;

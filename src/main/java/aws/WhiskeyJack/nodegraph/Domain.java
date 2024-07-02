@@ -4,6 +4,7 @@
  */
 package aws.WhiskeyJack.nodegraph;
 
+import aws.WhiskeyJack.properties.*;
 import aws.WhiskeyJack.util.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -19,7 +20,7 @@ import java.util.concurrent.*;
  * <dn>name|name<dd>A set of possible domains, useful for nodes that can appear
  *          in multiple domains. (not implemented)
  */
-public class Domain extends Collectable {
+public class Domain extends Collectable<Property> {
     private final Domain parent;
     private final String name;
     private final String styleName;

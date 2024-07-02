@@ -7,6 +7,7 @@ package aws.WhiskeyJack.nodeviewerfx;
 
 import aws.WhiskeyJack.nodegraph.*;
 import aws.WhiskeyJack.util.*;
+import static aws.WhiskeyJack.util.EZOutput.*;
 import java.util.*;
 import javafx.geometry.*;
 import javafx.scene.control.*;
@@ -146,6 +147,7 @@ public class PortView extends Port implements Selectable {
     @Override
     public void setValue(Object v) {
         super.setValue(v);
+        D."Port \{getName() } setvalue \{v}";
         setViewText();
     }
     public void setViewText() {
@@ -156,10 +158,6 @@ public class PortView extends Port implements Selectable {
     }
     @Override
     public javafx.scene.Node getView() { return view; }
-    @Override
-    public String toString() {
-        return super.toString() + ":" + view.getText();
-    }
     
     private static final Image cursor = new Image(PortView.class.getResourceAsStream("DragTargetCursor.png"));
     static final private Image rightArrow = new Image(PortView.class.getResourceAsStream("RightArrow.png"));

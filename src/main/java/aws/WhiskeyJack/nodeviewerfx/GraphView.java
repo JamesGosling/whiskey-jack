@@ -668,31 +668,43 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
     public AnchorPane getView() {
         return view;
     }
-    private Collection<javafx.scene.Node> props;
-    private int row;
+    private List<PropRow> props;
     private void populatePropbox() {
-        row = 0;
         props = new ArrayList<>();
         var s = getSelection().getFirstSelected();
         var domain = s == null ? Domain.any : s.getDomain();
         D."Populate propbox domain \{domain}";
         if(s instanceof aws.WhiskeyJack.nodegraph.Node node) {
             node.forAllProperties(p -> {
-                if(!p.getMeta(MetaProperty.unEditable, false))
-                    addProp(p.getName(), "string", p.get(), nv -> p.set(nv), p.getMeta("readonly", false));
+                if(!p.getMeta(MetaProperty.unEditable, false)) {
+                    var ro = p.getMeta("readonly", false);
+                    var rank = 3;
+                    if(p.get() instanceof Port port) {
+                        if(port.isConnected())
+                            ro = true;
+                        rank = port.isInputSide() ? 1 : 2;
+                    }
+                    D."addProp \{p.getName()} type \{p.getClass()}";
+                    addPropUI(p.getName(), "string", p.get(), nv -> {
+                        D."   set \{p.getName()} to \{nv} :: \{p.getClass()}";
+                        p.setValue(nv);
+                        s.reEstablishText();
+                    }, ro, rank);
+                }
             });
             node.nodeMetadata.forAllProperties(p -> {
                 if(node.getProp0(p.getName(), null) == null
                    && !p.getMeta(MetaProperty.unEditable, false))
-                    addProp(p.getName(), "string", p.get(""), nv ->
-                        node.putProp(p.getName(), nv), p.getMeta("readonly", false));
+                    addPropUI(p.getName()+"*", "string", p.get(""), nv ->
+                        node.putProp(p.getName(), nv),
+                        p.getMeta("readonly", false), 9);
             });
             if(node.nodeMetadata.getProp("properties", null) instanceof Map m)
                 m.forEach((k, v) -> {
                     var sk = Coerce.toString(k);
                     D."\{sk} is a \{v.getClass()}";
-                    addProp(sk, "string", v, nv ->
-                        node.putProp(sk, nv), false);
+                    addPropUI(sk+"!", "string", v, nv ->
+                        node.putProp(sk, nv), false, 10);
                 });
         } else for(var q: Question.extract(q -> q.getDomain() == domain)) {
                 var label = q.get("label", null);
@@ -701,7 +713,7 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
                         if(isEmpty(label = q.get("description", null)))
                             label = "No Name";
                 var type = q.get("type", (Object) null);
-                addProp(label, type, q.getValue(), v -> q.setValue(v), false);
+                addPropUI(label, type, q.getValue(), v -> q.setValue(v), false, 11);
             }
         propbox.setMaxWidth(Double.MAX_VALUE);
         var c1 = new ColumnConstraints();
@@ -711,14 +723,32 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
 //        c2.setPercentWidth(60);
         c2.setHgrow(Priority.ALWAYS);
         propbox.getColumnConstraints().setAll(c1, c2);
-        propbox.getChildren().setAll(props);
+        final var ch = propbox.getChildren();
+        ch.clear();
+        props.sort(null);
+        int row = 0;
+        for(var r: props) {
+            GridPane.setConstraints(r.label, 0, row, 1, 1, HPos.LEFT, VPos.BASELINE, Priority.NEVER, Priority.NEVER);
+            GridPane.setConstraints(r.thang, 1, row, 1, 1, HPos.CENTER, VPos.BASELINE, Priority.ALWAYS, Priority.NEVER);
+            row++;
+            ch.add(r.label);
+            ch.add(r.thang);
+        }
         props = null;
     }
-    private void addProp(String s, Object type, Object value, Consumer<Object> setter, boolean readonly) {
+    private void addPropUI(String s, Object type, Object value, Consumer<Object> setter,
+        boolean readonly, int key) {
         Region valueNode;
         var labelNode = new Label(s);
         var tooltip = "";
         var pattern = "";
+        if(value instanceof Port p)
+            if(p.isConnected())
+                readonly = true;
+            else {
+                value = p.getValue();
+                labelNode.setText("➔" + s);
+            }
         if(value instanceof Map m) {
             var t = m.get("type");
             if(t != null) type = Coerce.toString(t);
@@ -756,7 +786,7 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
                 });
                 valueNode = b;
             }
-            case "int" -> {
+            case "double", "int" -> {
                 var b = new Slider(0, 1, Coerce.toDouble(value));
                 b.valueProperty().addListener((cl, was, is) -> {
 //                        System.out.println("Changed int " + is + " " + cl);
@@ -765,10 +795,11 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
                 valueNode = b;
             }
             default -> {
+                D."Text field for \{s} type \{type}";
                 var b = new TextField(Coerce.toString(value));
                 if(!isBlank(pattern)) b.setPromptText(pattern);
                 b.textProperty().addListener((cl, was, is) -> {
-//                        System.out.println("Changed string " + is + " " + cl);
+                    D."Set \{s} to \{is} was \{was}";
                     setter.accept(is);
                 });
                 valueNode = b;
@@ -784,10 +815,24 @@ public class GraphView extends Graph<NodeView, PortView, ArcView, GraphView> imp
         }
 //        labelNode.setMaxWidth(Double.MAX_VALUE);
         valueNode.setMaxWidth(Double.MAX_VALUE);
-        GridPane.setConstraints(labelNode, 0, row, 1, 1, HPos.LEFT, VPos.BASELINE, Priority.NEVER, Priority.NEVER);
-        GridPane.setConstraints(valueNode, 1, row, 1, 1, HPos.CENTER, VPos.BASELINE, Priority.ALWAYS, Priority.NEVER);
-        row++;
-        props.add(labelNode);
-        props.add(valueNode);
+        props.add(new PropRow(key, s, labelNode, valueNode));
+    }
+
+    private static class PropRow implements Comparable<PropRow> {
+        final int key1;
+        final String key2;
+        final Label label;
+        final Region thang;
+        PropRow(int k1, String k2, Label l, Region t) {
+            key1 = k1;
+            key2 = k2;
+            label = l;
+            thang = t;
+        }
+        @Override
+        public int compareTo(PropRow o) {
+            return key1 == o.key1 ? String.CASE_INSENSITIVE_ORDER.compare(key2, o.key2)
+                : key1 - o.key1;
+        }
     }
 }

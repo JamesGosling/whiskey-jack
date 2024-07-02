@@ -4,6 +4,8 @@
  */
 package aws.WhiskeyJack.nodegraph;
 
+import aws.WhiskeyJack.properties.*;
+import static aws.WhiskeyJack.properties.MetaProperty.*;
 import java.util.*;
 import javax.annotation.*;
 
@@ -75,6 +77,16 @@ public class MetaPort extends Port {
             setValue(null);
         }
         unboundOK = (boolean) getOpt(values, "unboundok", unboundOK);
+        var map = new HashMap();
+        map.putAll(values);
+        map.putAll(mutableMapOf(
+            "name", getName(),
+            "type", getType(),
+            "description", getDescription(),
+            "unboundOK", unboundOK,
+            "port", isOutputSide() ? "output" : "input",
+            "code", isCode()));
+        within.putProp(getName(), new MetaProperty(map));
     }
     @Override
     public void add(Arc a) {

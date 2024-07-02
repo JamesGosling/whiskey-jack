@@ -49,8 +49,10 @@ public class MetaProperty extends PropertyBase {
         var ret = new HashMap();
         if(objs!=null) {
             var limit = objs.length-1;
-            for(var i = 0; i<limit; i+=2)
-                ret.put(objs[i], objs[i+1]);
+            for(var i = 0; i<limit; i+=2) {
+                var value = objs[i+1];
+                if(!Utils.isEmpty(value) && value!=Boolean.FALSE) ret.put(objs[i], value);
+            }
         }
         return ret;
     }

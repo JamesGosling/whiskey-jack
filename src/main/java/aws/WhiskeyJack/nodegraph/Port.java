@@ -6,13 +6,12 @@ package aws.WhiskeyJack.nodegraph;
 
 import aws.WhiskeyJack.nodegraph.Graph.PendingConnection;
 import aws.WhiskeyJack.properties.*;
-import static aws.WhiskeyJack.properties.MetaProperty.*;
 import static aws.WhiskeyJack.util.Collectable.*;
 import aws.WhiskeyJack.util.*;
 import java.util.*;
 import java.util.function.*;
 
-public class Port extends Collectable {
+public class Port extends Collectable<Property> {
     public final MetaPort metadata;
     private Domain domain = Domain.unknown;
     private ErrorCode errorCode;
@@ -42,12 +41,7 @@ public class Port extends Collectable {
                     (String) arc.get("toUid"),
                     (String) arc.get("toPort")));
         });
-        within.putProp(getName(), new Property(new MetaProperty(
-            mutableMapOf("name", getName(),
-                "type", metadata.getType(),
-                "description", metadata.getDescription(),
-                "readonly", true
-            )), this));
+        within.putProp(getName(), new Property((MetaProperty)metadata.getProperty(getName()), this));
     }
     public void remove(Arc a) {
         if(arcs != null) {
@@ -117,6 +111,11 @@ public class Port extends Collectable {
             .append('.')
             .append(getName());
     }
+    public StringBuilder appendShortNameTo(StringBuilder sb) {
+        return sb.append(within.getName())
+            .append('.')
+            .append(getName());
+    }
     public String getName() {
         return metadata.getName();
     }
@@ -156,7 +155,17 @@ public class Port extends Collectable {
     }
     @Override
     public String toString() {
-        return "Port<" + within.getName() + "." + getName() + ">";
+        var sb = new StringBuilder();
+        if(isOutputSide()) sb.append("➔");
+        if(isConnected()) {
+            var first = sb.length();
+            arcs.forEach(a->{
+                if(sb.length()>first) sb.append(',');
+                a.otherEnd(this).appendShortNameTo(sb);
+            });
+        } else sb.append(value);
+        if(isInputSide()) sb.append("➔");
+        return sb.toString();
     }
     public String dtString() {
         return getName() + '[' + getDomain() + ',' + getType().getName() + ']';

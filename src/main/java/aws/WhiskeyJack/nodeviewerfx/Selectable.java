@@ -26,4 +26,5 @@ public interface Selectable {
         v.setTranslateX(dx);
         v.setTranslateY(dy);
     }
+    default public void reEstablishText() {}
 }

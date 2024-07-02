@@ -7,10 +7,12 @@ package aws.WhiskeyJack.nodeviewerfx;
 import aws.WhiskeyJack.metadata.*;
 import aws.WhiskeyJack.nodegraph.Node;
 import aws.WhiskeyJack.nodegraph.*;
+import static aws.WhiskeyJack.nodegraph.ErrorCode.*;
 import aws.WhiskeyJack.util.*;
 import static aws.WhiskeyJack.util.EZOutput.*;
 import java.util.*;
 import java.util.function.*;
+import java.util.regex.*;
 import javafx.geometry.*;
 import javafx.scene.control.*;
 import javafx.scene.image.*;
@@ -51,6 +53,7 @@ public class NodeView extends Node implements Selectable {
         super.populateFrom(map);
         pane.setLayoutX(get(map, "x", 0));
         pane.setLayoutY(get(map, "y", 0));
+        reEstablishText();
     }
     @Override
     public GraphView getContext() {
@@ -122,8 +125,7 @@ public class NodeView extends Node implements Selectable {
                 arcs.add(a);
                 if(p.isInputSide()) {
                     if(t.rout == null) t.rout = a.otherEnd(p);
-                } else
-                    if(t.rin == null) t.rin = a.otherEnd();
+                } else if(t.rin == null) t.rin = a.otherEnd();
             });
         });
         arcs.forEach(a -> a.delete());
@@ -131,9 +133,36 @@ public class NodeView extends Node implements Selectable {
         getContext().remove(this);
         if(t.rout != null && t.rin != null) t.rout.connectTo(t.rin);
     }
+    private String rawTitle;
     public void setTitle(String s) {
-        title.setText(s);
+        if("if".equals(s)) s = "if $expr";  // TODO: debug hack
+        rawTitle = s;
+        reEstablishText();
     }
+    @Override
+    public void reEstablishText() {
+        title.setText(substitute(rawTitle));
+    }
+    public String substitute(String orig) {
+        if(orig.indexOf('$') < 0) return orig;
+        var sb = new StringBuilder();
+        Matcher m = vrefPattern.matcher(orig);
+        while(m.find()) {
+            var tag = m.group(1);
+            var p = getProperty(tag);
+            m.appendReplacement(sb, "");
+            if(p == null)
+                sb.append("$?").append(tag);
+            else {
+                var v = p.get();
+                if(v instanceof Port pt) v = pt.getValue();
+                sb.append(Coerce.toString(v));
+            }
+        }
+        m.appendTail(sb);
+        return sb.toString();
+    }
+    private static Pattern vrefPattern = Pattern.compile("\\$(\\w*)");
     private Tooltip tip;
     public void setTooltip(String tooltip) {
         if(!Utils.isEmpty(tooltip))
@@ -163,7 +192,8 @@ public class NodeView extends Node implements Selectable {
     }
     private void establishIcon() {
         var icon = IconOK;
-        if(!expanded) icon = IconHidden;
+        if(getErrorCode()!=allIsWell) icon = IconBroken;
+        else if(!expanded) icon = IconHidden;
         else if(isInferred()) icon = IconRobot;
         titleIcon.setImage(icon);
     }
@@ -173,7 +203,7 @@ public class NodeView extends Node implements Selectable {
         super.setInferred(b);
         establishIcon();
         var view = getView();
-        if(view.getLayoutX()==0 || view.getLayoutY()==0) {
+        if(view.getLayoutX() == 0 || view.getLayoutY() == 0) {
             var ctx = getContext();
             var bil = ctx.getView().getBoundsInLocal();
             view.setLayoutX(bil.getCenterX());
@@ -191,7 +221,8 @@ public class NodeView extends Node implements Selectable {
     @Override
     public NodeView setDomain(Domain d) {
         var d0 = getDomain();
-       if("streamManager".equals(getName())) D."NV setDomain -> was \{d0} prop=\{d}";
+        if("streamManager".equals(getName()))
+            D."NV setDomain -> was \{d0} prop=\{d}";
         super.setDomain(d);
         var d1 = getDomain();
         if(d0 != d1)

@@ -4,11 +4,12 @@
  */
 package aws.WhiskeyJack.nodegraph;
 
+import aws.WhiskeyJack.properties.*;
 import aws.WhiskeyJack.util.*;
 import java.util.*;
 import java.util.function.*;
 
-public abstract class GraphPart<T extends GraphPart> extends Collectable {
+public abstract class GraphPart<T extends GraphPart, P extends PropertyBase> extends Collectable<P> {
     private String message;  // situation-specific message (eg. an error)
     private ErrorCode errorCode = ErrorCode.allIsWell;  // TODO: not fleshed-out
     private String name = "unsetName";
@@ -33,6 +34,7 @@ public abstract class GraphPart<T extends GraphPart> extends Collectable {
     public final T setMessage(String m) {
         return setMessage(ErrorCode.allIsWell, m);
     }
+    public final ErrorCode getErrorCode() { return errorCode; }
     public abstract Graph getContext();
     @Override
     public abstract String toString(); // firce subclasses to implement toString

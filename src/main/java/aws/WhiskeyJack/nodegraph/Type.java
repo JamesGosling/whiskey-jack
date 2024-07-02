@@ -4,13 +4,14 @@
  */
 package aws.WhiskeyJack.nodegraph;
 
+import aws.WhiskeyJack.properties.*;
 import aws.WhiskeyJack.util.*;
 import static aws.WhiskeyJack.util.Utils.*;
 import java.util.*;
 import java.util.function.*;
 import java.util.regex.*;
 
-public class Type extends Collectable {
+public class Type extends Collectable<Property> {
     private final String name;
     private final Object dflt;
     private boolean error = false;

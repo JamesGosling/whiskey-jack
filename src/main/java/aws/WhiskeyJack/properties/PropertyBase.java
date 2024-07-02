@@ -4,7 +4,9 @@
  */
 package aws.WhiskeyJack.properties;
 
+import aws.WhiskeyJack.nodegraph.*;
 import aws.WhiskeyJack.util.*;
+import static aws.WhiskeyJack.util.EZOutput.*;
 import static aws.WhiskeyJack.util.Utils.*;
 import java.util.*;
 import java.util.function.*;
@@ -13,6 +15,7 @@ public abstract class PropertyBase implements Comparable<PropertyBase> {
     private Object value;
 
     protected PropertyBase(Object v) {
+        if(v instanceof PropertyBase) D."***PoP init \{new Throwable()}";
         value = v;
     }
     protected PropertyBase() {
@@ -42,24 +45,31 @@ public abstract class PropertyBase implements Comparable<PropertyBase> {
     public final Object get(Object dflt) {
         return isEmpty() ? dflt : get();
     }
-    public void set(Object v) {
-        value = v;
+    public void setValue(Object v) {
+        if(v instanceof PropertyBase) D."***PoP set \{new Throwable()}";
+        if(value instanceof Port p) {
+            D."Changing value of \{p} to \{v}";
+            p.setValue(v);
+        }
+        else {
+            D."Changing value of nonport \{getName() } from \{value}:\{value!=null ? value.getClass() : "--"} to \{v}";
+            value = v;
+        }
     }
-    public void set(PropertyBase v) {
-        value = v.get();
+    public void setValue(PropertyBase v) {
+        setValue(v.get());
     }
     public void clear() {
         value = EMPTY;
     }
     public final void ifPresent(Consumer action) {
-        if(!isEmpty())
-            action.accept(get());
+        ifPresentOrElse(action, null);
     }
     public final void ifPresentOrElse(Consumer action, Runnable emptyAction) {
         if(isPresent())
             action.accept(get());
         else
-            emptyAction.run();
+            if(emptyAction!=null) emptyAction.run();
     }
     public boolean asBoolean() {
         return Coerce.toBoolean(get());
